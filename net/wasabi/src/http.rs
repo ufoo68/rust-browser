@@ -29,10 +29,10 @@ impl HttpClient {
 
     let socket_addr: SocketAddr = (ips[0], port).into();
 
-    let mut stream = match TcpStrem::connect(socket_addr) {
+    let mut stream = match TcpStream::connect(socket_addr) {
       Ok(stream) => stream,
       Err(_) => {
-        return Err(Error::Network(format!("Failed to connnect to TCP stream".to_string(), e)));
+        return Err(Error::Network("Failed to connnect to TCP stream".to_string()));
       },
     };
 
