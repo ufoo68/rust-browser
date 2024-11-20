@@ -10,6 +10,7 @@ use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::str::FromStr;
+use alloc::string::String;
 
 #[derive(Debug, Clone)]
 pub struct HtmlParser {
@@ -177,6 +178,28 @@ impl HtmlParser {
         }
         InsertionMode::InBody => {
           match token {
+            Some(HtmlToken::StartTag { ref tag, self_closing: _, ref attributes }) => {
+              match tag.as_str() {
+                "p" => {
+                  self.insert_element(tag, attributes.to_vec());
+                  token = self.t.next();
+                  continue;
+                }
+                "h1" | "h2" => {
+                  self.insert_element(tag, attributes.to_vec());
+                  token = self.t.next();
+                  continue;
+                }
+                "a" => {
+                  self.insert_element(tag, attributes.to_vec());
+                  token = self.t.next();
+                  continue;
+                }
+                _ => {
+                  token = self.t.next();
+                }
+              }
+            }
             Some(HtmlToken::EndTag { ref tag }) => {
               match tag.as_str() {
                 "body" => {
@@ -197,6 +220,24 @@ impl HtmlParser {
                   }
                   continue;
                 }
+                "p" => {
+                  let element_kind = ElementKind::from_str(tag).expect("failed to parse ElementKind");
+                  token = self.t.next();
+                  self.pop_until(element_kind);
+                  continue;
+                }
+                "h1" | "h2" => {
+                  let element_kind = ElementKind::from_str(tag).expect("failed to parse ElementKind");
+                  token = self.t.next();
+                  self.pop_until(element_kind);
+                  continue;
+                }
+                "a" => {
+                  let element_kind = ElementKind::from_str(tag).expect("failed to parse ElementKind");
+                  token = self.t.next();
+                  self.pop_until(element_kind);
+                  continue;
+                }
                 _ => {
                   token = self.t.next();
                 }
@@ -205,7 +246,11 @@ impl HtmlParser {
             Some(HtmlToken::Eof) | None => {
               return self.window.clone();
             }
-            _ => {}
+            Some(HtmlToken::Char(c)) => {
+              self.insert_char(c);
+              token = self.t.next();
+              continue;
+            }
           }
         }
         InsertionMode::Text => {
@@ -350,6 +395,42 @@ impl HtmlParser {
       }
     }
     false
+  }
+
+  fn create_char(&self, c: char) -> Node {
+    let mut s = String::new();
+    s.push(c);
+    Node::new(NodeKind::Text(s))
+  }
+
+  fn insert_char(&mut self, c: char) {
+    let current = match self.stack_of_open_elements.last() {
+      Some(node) => node.clone(),
+      None => return,
+    };
+
+    if let NodeKind::Text(ref mut s) = current.borrow_mut().kind {
+      s.push(c);
+      return;
+    }
+
+    if c == ' ' || c == '\n' {
+      return;
+    }
+
+    let node = Rc::new(RefCell::new(self.create_char(c)));
+
+    if current.borrow().first_child().is_some() {
+      current.borrow().first_child().unwrap().borrow_mut().set_next_sibling(Some(node.clone()));
+      node.borrow_mut().set_previous_sibling(Rc::downgrade(&current.borrow().first_child().expect("first_child is None")));
+    } else {
+      current.borrow_mut().set_first_child(Some(node.clone()));
+    }
+
+    current.borrow_mut().set_last_child(Rc::downgrade(&node));
+    node.borrow_mut().set_parent(Rc::downgrade(&current));
+
+    self.stack_of_open_elements.push(node);
   }
 }
 

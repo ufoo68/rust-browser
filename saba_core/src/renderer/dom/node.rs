@@ -18,6 +18,12 @@ pub struct Node {
   next_sibling: Option<Rc<RefCell<Node>>>,
 }
 
+impl PartialEq for Node {
+  fn eq(&self, other: &Self) -> bool {
+    self.kind == other.kind
+  }
+}
+
 impl Node {
   pub fn new(kind: NodeKind) -> Self {
     Self {
@@ -94,11 +100,24 @@ impl Node {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub enum NodeKind {
   Document,
   Element(Element),
   Text(String),
+}
+
+impl PartialEq for NodeKind {
+  fn eq(&self, other: &Self) -> bool {
+    match &self {
+      NodeKind::Document => matches!(other, NodeKind::Document),
+      NodeKind::Element(e1) => match &other {
+        NodeKind::Element(e2) => e1 == e2,
+        _ => false,
+      }
+      NodeKind::Text(_) => matches!(other, NodeKind::Text(_))
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -140,13 +159,17 @@ impl Element {
   }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum ElementKind {
   Html,
   Head,
   Style,
   Script,
   Body,
+  P,
+  H1,
+  H2,
+  A,
 }
 
 impl FromStr for ElementKind {
@@ -159,6 +182,10 @@ impl FromStr for ElementKind {
       "style" => Ok(ElementKind::Style),
       "script" => Ok(ElementKind::Script),
       "body" => Ok(ElementKind::Body),
+      "p" => Ok(ElementKind::P),
+      "h1" => Ok(ElementKind::H1),
+      "h2" => Ok(ElementKind::H2),
+      "a" => Ok(ElementKind::A),
       _ => Err(format!("failed to parse ElementKind: {:?}", s)),
     }
   }
