@@ -446,3 +446,87 @@ pub enum InsertionMode {
   AfterBody,
   AfterAfterBody,
 }
+
+#[cfg(test)]
+mod tests {
+  use alloc::string::ToString;
+  use super::*;
+
+  #[test]
+  fn test_empty() {
+    let html = "".to_string();
+    let t = HtmlTokenizer::new(html);
+    let window = super::HtmlParser::new(t).construct_tree();
+    let document = window.borrow().document();
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Document))),
+      document,
+    )
+  }
+
+  #[test]
+  fn test_body() {
+    let html = "<html><head></head><body></body></html>".to_string();
+    let t = HtmlTokenizer::new(html);
+    let window = super::HtmlParser::new(t).construct_tree();
+    let document = window.borrow().document();
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Document))),
+      document,
+    );
+
+    let html = document.borrow().first_child().expect("first_child is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Element(Element::new("html", Vec::new()))))),
+      html,
+    );
+
+    let head = html.borrow().first_child().expect("first_child is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Element(Element::new("head", Vec::new()))))),
+      head,
+    );
+
+    let body = head.borrow().next_sibling().expect("next_sibling is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Element(Element::new("body", Vec::new()))))),
+      body,
+    );
+  }
+
+  #[test]
+  fn test_text() {
+    let html = "<html><head></head><body>hello</body></html>".to_string();
+    let t = HtmlTokenizer::new(html);
+    let window = super::HtmlParser::new(t).construct_tree();
+    let document = window.borrow().document();
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Document))),
+      document,
+    );
+
+    let html = document.borrow().first_child().expect("first_child is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Element(Element::new("html", Vec::new()))))),
+      html,
+    );
+
+    let head = html.borrow().first_child().expect("first_child is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Element(Element::new("head", Vec::new()))))),
+      head,
+    );
+
+    let body = head.borrow().next_sibling().expect("next_sibling is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Element(Element::new("body", Vec::new()))))),
+      body,
+    );
+
+    let text = body.borrow().first_child().expect("first_child is None");
+    assert_eq!(
+      Rc::new(RefCell::new(Node::new(NodeKind::Text("hello".to_string())))),
+      text,
+    );
+  }
+}
