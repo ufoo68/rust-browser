@@ -131,7 +131,7 @@ impl Element {
   pub fn new(element_name: &str, attributes: Vec<Attribute>) -> Self {
     Self {
       kind: ElementKind::from_str(element_name).expect("failed to parse ElementKind"),
-      attributes: Vec::new(),
+      attributes,
     }
   }
 
