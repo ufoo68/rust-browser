@@ -19,8 +19,8 @@ pub struct Node {
 }
 
 impl Node {
-  pub fn new(kind: NodeKind) -> Rc<RefCell<Node>> {
-    Rc::new(RefCell::new(Node {
+  pub fn new(kind: NodeKind) -> Self {
+    Self {
       kind,
       window: Weak::new(),
       parent: Weak::new(),
@@ -28,7 +28,7 @@ impl Node {
       last_child: Weak::new(),
       previous_sibling: Weak::new(),
       next_sibling: None,
-    }))
+    }
   }
 
   pub fn set_parent(&mut self, parent: Weak<RefCell<Node>>) {
@@ -109,7 +109,7 @@ pub struct Window {
 impl Window {
   pub fn new() -> Self {
     let window = Self {
-      document: Node::new(NodeKind::Document),
+      document: Rc::new(RefCell::new(Node::new(NodeKind::Document))),
     };
 
     window.document.borrow_mut().set_window(Rc::downgrade(&Rc::new(RefCell::new(window.clone()))));
