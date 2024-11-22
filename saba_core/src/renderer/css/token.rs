@@ -235,4 +235,19 @@ mod tests {
     assert_eq!(t.next(), Some(CssToken::CloseCurly));
     assert_eq!(t.next(), None);
   }
+
+  #[test]
+  fn test_class_selector() {
+    let style = ".class { color: red; }".to_string();
+    let mut t = CssTokenizer::new(style);
+    assert_eq!(t.next(), Some(CssToken::Delim('.')));
+    assert_eq!(t.next(), Some(CssToken::Ident("class".to_string())));
+    assert_eq!(t.next(), Some(CssToken::OpenCurly));
+    assert_eq!(t.next(), Some(CssToken::Ident("color".to_string())));
+    assert_eq!(t.next(), Some(CssToken::Colon));
+    assert_eq!(t.next(), Some(CssToken::Ident("red".to_string())));
+    assert_eq!(t.next(), Some(CssToken::SemiColon));
+    assert_eq!(t.next(), Some(CssToken::CloseCurly));
+    assert_eq!(t.next(), None);
+  }
 }
