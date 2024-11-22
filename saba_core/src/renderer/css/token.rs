@@ -81,6 +81,26 @@ impl CssTokenizer {
 
     num
   }
+
+  fn consume_ident_token(&mut self) -> String {
+    let mut s = String::new();
+    s.push(self.input[self.pos]);
+
+    loop {
+      self.pos += 1;
+      let c = self.input[self.pos];
+      match c {
+        'a'..='z' | 'A'..='Z' | '0'..='9' | '_' | '-' => {
+          s.push(c);
+        }
+        _ => {
+          break;
+        }
+      }
+    }
+    
+    s
+  }
 }
 
 impl Iterator for CssTokenizer {
@@ -116,6 +136,34 @@ impl Iterator for CssTokenizer {
           self.pos -= 1;
           t
         }
+        '#' => {
+          let value = self.consume_ident_token();
+          self.pos -= 1;
+          CssToken::HashToken(value)
+        }
+        '-' => {
+          let t = CssToken::Ident(self.consume_ident_token());
+          self.pos -= 1;
+          t
+        }
+        '@' => {
+          if self.input[self.pos + 1].is_ascii_alphabetic()
+            && self.input[self.pos + 2].is_alphabetic()
+            && self.input[self.pos + 3].is_alphabetic()
+          {
+            self.pos += 1;
+            let t = CssToken::AtKeyword(self.consume_ident_token());
+            self.pos -= 1;
+            t
+          } else {
+            CssToken::Delim('@')
+          }
+        }
+        'a'..='z' | 'A'..='Z' | '_' => {
+          let t = CssToken::Ident(self.consume_ident_token());
+          self.pos -= 1;
+          t
+        }
         _ => {
           unimplemented!("CssTokenizer::next() not implemented for character: {}", c);
         }
@@ -124,5 +172,67 @@ impl Iterator for CssTokenizer {
       self.pos += 1;
       return Some(token);
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use alloc::string::ToString;
+
+  #[test]
+  fn test_empty() {
+    let style = "".to_string();
+    let mut t = CssTokenizer::new(style);
+    assert_eq!(t.next(), None);
+  }
+
+  #[test]
+  fn test_one_rule() {
+    let style = "p { color: red; }".to_string();
+    let mut t = CssTokenizer::new(style);
+    assert_eq!(t.next(), Some(CssToken::Ident("p".to_string())));
+    assert_eq!(t.next(), Some(CssToken::OpenCurly));
+    assert_eq!(t.next(), Some(CssToken::Ident("color".to_string())));
+    assert_eq!(t.next(), Some(CssToken::Colon));
+    assert_eq!(t.next(), Some(CssToken::Ident("red".to_string())));
+    assert_eq!(t.next(), Some(CssToken::SemiColon));
+    assert_eq!(t.next(), Some(CssToken::CloseCurly));
+    assert_eq!(t.next(), None);
+  }
+
+  #[test]
+  fn test_id_selector() {
+    let style = "#id { color: red; }".to_string();
+    let mut t = CssTokenizer::new(style);
+    assert_eq!(t.next(), Some(CssToken::HashToken("#id".to_string())));
+    assert_eq!(t.next(), Some(CssToken::OpenCurly));
+    assert_eq!(t.next(), Some(CssToken::Ident("color".to_string())));
+    assert_eq!(t.next(), Some(CssToken::Colon));
+    assert_eq!(t.next(), Some(CssToken::Ident("red".to_string())));
+    assert_eq!(t.next(), Some(CssToken::SemiColon));
+    assert_eq!(t.next(), Some(CssToken::CloseCurly));
+    assert_eq!(t.next(), None);
+  }
+
+  #[test]
+  fn test_multiple_rules() {
+    let style = "p { color: red; } div { color: blue; }".to_string();
+    let mut t = CssTokenizer::new(style);
+    assert_eq!(t.next(), Some(CssToken::Ident("p".to_string())));
+    assert_eq!(t.next(), Some(CssToken::OpenCurly));
+    assert_eq!(t.next(), Some(CssToken::Ident("color".to_string())));
+    assert_eq!(t.next(), Some(CssToken::Colon));
+    assert_eq!(t.next(), Some(CssToken::Ident("red".to_string())));
+    assert_eq!(t.next(), Some(CssToken::SemiColon));
+    assert_eq!(t.next(), Some(CssToken::CloseCurly));
+    assert_eq!(t.next(), Some(CssToken::Ident("div".to_string())));
+    assert_eq!(t.next(), Some(CssToken::OpenCurly));
+    assert_eq!(t.next(), Some(CssToken::Ident("color".to_string())));
+    assert_eq!(t.next(), Some(CssToken::Colon));
+    assert_eq!(t.next(), Some(CssToken::Ident("blue".to_string())));
+    assert_eq!(t.next(), Some(CssToken::SemiColon));
+    assert_eq!(t.next(), Some(CssToken::CloseCurly));
+    assert_eq!(t.next(), None);
   }
 }
