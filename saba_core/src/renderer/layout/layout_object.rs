@@ -74,3 +74,10 @@ impl LayoutObject {
     self.size
   }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LayoutObjectKind {
+  Block,
+  Inline,
+  Text,
+}
