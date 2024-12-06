@@ -1,6 +1,8 @@
 use alloc::rc::Rc;
 use alloc::rc::Weak;
 use core::cell::RefCell;
+use core::fmt::Display;
+use core::fmt::Formatter;
 use core::str::FromStr;
 use alloc::string::String;
 use crate::renderer::html::attribute::Attribute;
@@ -188,5 +190,22 @@ impl FromStr for ElementKind {
       "a" => Ok(ElementKind::A),
       _ => Err(format!("failed to parse ElementKind: {:?}", s)),
     }
+  }
+}
+
+impl Display for ElementKind {
+  fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
+    let s = match self {
+      ElementKind::Html => "html",
+      ElementKind::Head => "head",
+      ElementKind::Style => "style",
+      ElementKind::Script => "script",
+      ElementKind::Body => "body",
+      ElementKind::P => "p",
+      ElementKind::H1 => "h1",
+      ElementKind::H2 => "h2",
+      ElementKind::A => "a",
+    };
+    write!(f, "{}", s)
   }
 }
