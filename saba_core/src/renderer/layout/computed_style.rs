@@ -49,7 +49,7 @@ impl ComputedStyle {
   }
 
   pub fn display(&self) -> DisplayType {
-    self.display.expect("display is not set")
+    self.display.clone().expect("display is not set")
   }
 
   pub fn set_font_size(&mut self, font_size: FontSize) {
@@ -57,7 +57,7 @@ impl ComputedStyle {
   }
 
   pub fn font_size(&self) -> FontSize {
-    self.font_size.expect("font_size is not set")
+    self.font_size.clone().expect("font_size is not set")
   }
 
   pub fn set_text_decoration(&mut self, text_decoration: TextDecoration) {
@@ -65,7 +65,7 @@ impl ComputedStyle {
   }
 
   pub fn text_decoration(&self) -> TextDecoration {
-    self.text_decoration.expect("text_decoration is not set")
+    self.text_decoration.clone().expect("text_decoration is not set")
   }
 
   pub fn set_height(&mut self, height: f64) {
@@ -82,6 +82,45 @@ impl ComputedStyle {
 
   pub fn width(&self) -> f64 {
     self.width.expect("width is not set")
+  }
+
+  pub fn defaulting(&mut self, node: &Rc<RefCell<Node>>, parent_style: Option<ComputedStyle>) {
+    if let Some(parent_style) = parent_style {
+      if self.background_color.is_none() && parent_style.background_color() != Color::white() {
+        self.background_color = Some(parent_style.background_color());
+      }
+      if self.color.is_none() && parent_style.color() != Color::black() {
+        self.color = Some(parent_style.color());
+      }
+      if self.font_size.is_none() && parent_style.font_size() != FontSize::Medium {
+        self.font_size = Some(parent_style.font_size());
+      }
+      if self.text_decoration.is_none() && parent_style.text_decoration() != TextDecoration::None {
+        self.text_decoration = Some(parent_style.text_decoration());
+      }
+    }
+
+    if self.background_color.is_none() {
+      self.background_color = Some(Color::white());
+    }
+    if self.color.is_none() {
+      self.color = Some(Color::black());
+    }
+    if self.display.is_none() {
+      self.display = Some(DisplayType::default(node));
+    }
+    if self.font_size.is_none() {
+      self.font_size = Some(FontSize::default(node));
+    }
+    if self.text_decoration.is_none() {
+      self.text_decoration = Some(TextDecoration::default(node));
+    }
+    if self.height.is_none() {
+      self.height = Some(0.0);
+    }
+    if self.width.is_none() {
+      self.width = Some(0.0);
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 
-use alloc::{rc::Rc, vec::Vec};
+use alloc::{rc::Rc, string::String, vec::Vec};
 
 use super::node::{Element, ElementKind, Node, NodeKind};
 use alloc::string::ToString;
@@ -26,4 +26,20 @@ pub fn get_target_element_node(
     }
     None => None,
   }
+}
+
+pub fn get_style_content(root: Rc<RefCell<Node>>) -> String {
+  let style_node = match get_target_element_node(Some(root), ElementKind::Style) {
+    Some(n) => n,
+    None => return "".to_string(),
+  };
+  let text_node = match style_node.borrow().first_child() {
+    Some(n) => n,
+    None => return "".to_string(),
+  };
+  let content = match &text_node.borrow().kind() {
+    NodeKind::Text(ref s) => s.clone(),
+    _ => return "".to_string(),
+  };
+  content
 }
